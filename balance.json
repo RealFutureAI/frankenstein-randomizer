@@ -1,0 +1,98 @@
+{
+  "version": "0.5.13",
+  "synergies": {
+    "66": {
+      "name": "Plague",
+      "percent": 10,
+      "sources": [
+        77,
+        74,
+        83
+      ],
+      "effect": "poison_damage",
+      "label": "FMMPPlagueDamagePerLevel"
+    },
+    "77": {
+      "name": "Infection",
+      "percent": 10,
+      "sources": [
+        66,
+        74,
+        83
+      ],
+      "effect": "poison_damage",
+      "label": "FMMPPlagueDamagePerLevel"
+    },
+    "76": {
+      "name": "Life Tap",
+      "percent": 10,
+      "sources": [
+        81,
+        86
+      ],
+      "effect": "life_tap_healing",
+      "label": "FMMPSynHealing"
+    },
+    "81": {
+      "name": "Confuse",
+      "percent": 15,
+      "sources": [
+        82,
+        86
+      ],
+      "effect": "physical_melee_reflection",
+      "label": "FMMPSynReflection"
+    },
+    "86": {
+      "name": "Attract",
+      "percent": 8,
+      "sources": [
+        81,
+        87,
+        77
+      ],
+      "effect": "death_explosion_damage",
+      "label": "FMMPSynExplosion"
+    },
+    "87": {
+      "name": "Decrepify",
+      "percent": 5,
+      "sources": [
+        81,
+        86,
+        91
+      ],
+      "effect": "growth_per_second",
+      "label": "FMMPSynGrowth"
+    },
+    "91": {
+      "name": "Lower Resist",
+      "percent": 0.75,
+      "sources": [
+        66,
+        77,
+        82
+      ],
+      "effect": "all_resistance_reduction",
+      "label": "FMMPSynResistance"
+    },
+    "82": {
+      "name": "Elemental Marks",
+      "percent": 15,
+      "sources": [
+        81,
+        91
+      ],
+      "effect": "all_three_elemental_damage",
+      "label": "FMMPSynElementDamage"
+    }
+  },
+  "balance": {
+    "lower_resist": "Base resistance-reduction curve halved; 0.75% relative synergy per hard point, calculated as integer ratio 3/4 without truncating coefficient. All six resistance types retained.",
+    "decrepify": "Start 0%, +3 percentage points per second before existing 5% synergies; 90% cap, all-target frame pump and immunity penalty retained. Noncombat metadata guarantees zero-strength state attaches.",
+    "plague_infection": "10% poison damage per hard point, same sources; spread helper matches manual Infection.",
+    "infection_death": "33% corpse base-life explosion, min=max; radius, half physical/fire split and guaranteed spread unchanged.",
+    "attract": "8% synergy sources Confuse, Decrepify, Infection; replaces Lower Resist in helper damage formulas and tooltip.",
+    "elemental": "All fire/cold/lightning base and level damage halved by reducing HitShift one bit; existing 15% synergies, 3-second fire cadence, cold duration/radius and lightning jumps retained."
+  }
+}

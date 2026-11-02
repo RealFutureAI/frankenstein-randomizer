@@ -1,0 +1,261 @@
+{
+  "package": "Frankenstein-Randomizer-0.5.13-Portable",
+  "curse_version": "0.5.13",
+  "loader_version": "1.3.1-beta",
+  "tested_game_build": "3.3.93847",
+  "mod_name": "FMMP-Experimental-R67",
+  "savepath": "FMMP_Randomizer/",
+  "dll_plugins": 19,
+  "files": [
+    {
+      "path": "D2RCore.dll",
+      "bytes": 18938712,
+      "sha256": "2a868d013d2e0830bd2d9e04b918b19e46a73cf726c833e70d089b948fdeb5a2"
+    },
+    {
+      "path": "d2rloader/config/d2rloader.toml",
+      "bytes": 9530,
+      "sha256": "d8c062a6a3e39b58a36a066fd7206955321f31693f69478e3370199ed8ce6537"
+    },
+    {
+      "path": "D2RLoader.exe",
+      "bytes": 23331160,
+      "sha256": "93021dad48533bcfca8a95c69a0cc00cdb9008a3ce6ceba1d04c7aca71985a10"
+    },
+    {
+      "path": "d2rloader.mpq",
+      "bytes": 11398483,
+      "sha256": "1f02aa4e3179cb8a8417125160aa3ef18003ea81ee1a4f54e0a76fd3f22d933b"
+    },
+    {
+      "path": "Dokumentation/AENDERUNGEN.txt",
+      "bytes": 1599,
+      "sha256": "58958787945ba8451df1b7b08d8d8de9138a58d69aa54517dabea84687af0845"
+    },
+    {
+      "path": "Dokumentation/QUELLEN.txt",
+      "bytes": 600,
+      "sha256": "f4b148a99c8c08cc259331980a042e426e19a609aae570f3351d1603577dc8b1"
+    },
+    {
+      "path": "Dokumentation/SYNERGIEN.txt",
+      "bytes": 2067,
+      "sha256": "09968c9c3788878606fb1d6c3d48a8ce60e65e553a875f243b797bcb893e4b02"
+    },
+    {
+      "path": "FMMP_STARTEN.cmd",
+      "bytes": 329,
+      "sha256": "b7545e7e4bd7ff4e9eb8485ad6d99706a2796f95fcd58a89b0e54896ce23dee0"
+    },
+    {
+      "path": "LIESMICH.txt",
+      "bytes": 2485,
+      "sha256": "b3d6236403f83aa3f6e6c46116e9b467af737cf3cd6ba573b037ed910a58333d"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/config/d2rloader.toml",
+      "bytes": 2903,
+      "sha256": "06498a54e8721cc5b790053d4ffec52b8758c0f23b168f534449cad1e18fcdf8"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/config/fmmp-mercenary-charms.toml",
+      "bytes": 47,
+      "sha256": "b5972a429c4178a32c65d0f238106a3437450f345ebb360fb25646802684e2ac"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/config/fmmp-set-charms.toml",
+      "bytes": 67,
+      "sha256": "079363b503b7e272361edde8807fdf5e91e4c79924410a2c5e274aeab8c9f2de"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/config/ruffneckk-mapsense.toml",
+      "bytes": 3293,
+      "sha256": "b4cfe75a6cb0d8311ac40674f5ee482946be872d79475947d616e0ec255611f4"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/D2R-DAMAGE-NUMBERS-LICENSE.txt",
+      "bytes": 1065,
+      "sha256": "7911f351100f6ff80e53b7780267c508aa59174a132d6e821cf9298856d7fc75"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/IMGUI-LICENSE.txt",
+      "bytes": 1083,
+      "sha256": "0ebf8feb061536bdebd7c6a365b64808ae3479048b1c44113e19037680c5f2be"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/ImGui-MIT.txt",
+      "bytes": 1083,
+      "sha256": "0ebf8feb061536bdebd7c6a365b64808ae3479048b1c44113e19037680c5f2be"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/LIBD2-LICENSE.txt",
+      "bytes": 1481,
+      "sha256": "7175831f1f56aa591a47adb4a5d41e08b885b075a4bcaf420f814bff1705453d"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/MapSense-MIT.txt",
+      "bytes": 1083,
+      "sha256": "e9472fe982609a6d6d79f01dd17d895649303445506a8843f1c79969a939321f"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/MinHook-BSD.txt",
+      "bytes": 4365,
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/MINHOOK-LICENSE.txt",
+      "bytes": 4362,
+      "sha256": "2bfff5fa29fc5d1cb2745acfaad9d930e983f5c8dd97e0ec5735d9199cf8f416"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/nlohmann-json-MIT.txt",
+      "bytes": 1076,
+      "sha256": "86b998c792894ccb911a1cb7994f7a9652894e7a094c0b5e45be2f553f45cf14"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/TOMLPLUSPLUS-LICENSE.txt",
+      "bytes": 1094,
+      "sha256": "529bc3900a9571e49db285b0df432397e70b881cc3bf48de6667ae74ff4b06d8"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/licenses/tomlplusplus-MIT.txt",
+      "bytes": 1094,
+      "sha256": "529bc3900a9571e49db285b0df432397e70b881cc3bf48de6667ae74ff4b06d8"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/metadata.json",
+      "bytes": 2763,
+      "sha256": "3e635ab921f092aa267e4c7c900208eeab8ebdc8549acb52b91367ba15b4bb48"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/d2rl-ruffneckk-mapsense.dll",
+      "bytes": 3878912,
+      "sha256": "f7edcf8012842926674bbc001f77af6c72cabb17dcedd8cabbd0b6a09623c526"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-act4-hireling.dll",
+      "bytes": 158208,
+      "sha256": "58de275f4d60c8642a343341b5918733817482a30b471196cd9f8ee62790db0b"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-auto-collectibles.dll",
+      "bytes": 147456,
+      "sha256": "1f4a02fcd0260fb66bbf8dd7ad66b853171560183f7a0e6b125f8149392fbc1b"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-collectibles.dll",
+      "bytes": 235008,
+      "sha256": "b2d4e1f3c7ea9c75dba0f0997e025f112628170544c61abaa44dea1512c75532"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-completed-will.dll",
+      "bytes": 116224,
+      "sha256": "544f53593d90f3cc4a5d2bb02b0fb6933c160f565c93d1f46e8b820f6c082454"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-encounters.dll",
+      "bytes": 179200,
+      "sha256": "54af2325fff59c530d773558739d76966c012b944f84678d4be46ac90749a2b5"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-gauntlet-lab.dll",
+      "bytes": 472576,
+      "sha256": "5a57c827c908498d5cb234db7436f618fc54cc365c809ad2c9fc1f0f341269e3"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-goblins.dll",
+      "bytes": 183808,
+      "sha256": "da17cd66c531d238e1ae494596e566e0a24516a9b0743fb6759439e4f89a144d"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-loot-alerts.dll",
+      "bytes": 330240,
+      "sha256": "83a472f7602e39f7a6c73e5168fda08813fa25070afdf818eee3550af8204ffe"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-mercenary-charms.dll",
+      "bytes": 196608,
+      "sha256": "142599528613ab71ebb46890cec317649a7b96e2332d3397667b9aa6056e1d17"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-minimap.dll",
+      "bytes": 118272,
+      "sha256": "a1e17187e31e0b050350052cd4787218af27c2f3c507a14894170c894a7db3c7"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-monster-display.dll",
+      "bytes": 149504,
+      "sha256": "3df18b024370b9b93125f722105a85bc70ff89408bfe5024aec374fd3341f722"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-personal-loot.dll",
+      "bytes": 267264,
+      "sha256": "87a478ef59c1a02509fd41da38a564ebff751e53f8e1cf7ebdf6a2b5983d3f2c"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-plague-trace.dll",
+      "bytes": 34816,
+      "sha256": "c33f2229279ca6232481e5d94aeff0cc2805d0eb210252d9f5dc079495f7f576"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-progression-save.dll",
+      "bytes": 208896,
+      "sha256": "ce2d60282a985bf2fa343c81910180bb3d33cc191620ef8d3fd9740b71b1a589"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-reward-fixes.dll",
+      "bytes": 374784,
+      "sha256": "1dc60a3952446c226ac81f7ea505ca6220e0b88ff39a2f7a16d60f5b642bf8d4"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-rotw-guard.dll",
+      "bytes": 118784,
+      "sha256": "94f6005d9c84f1d1154870580ac0e6e46098d0f9dd40f13916f7cd0b6fbeae85"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-runewords.dll",
+      "bytes": 143360,
+      "sha256": "5393ca2157e876bf379d8c391be185125b0c87b548d09c26e039bae6622e3ac3"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-set-charms.dll",
+      "bytes": 158720,
+      "sha256": "750c2963373d3c3af8a0d7fbdc509437913a1467d223ecca6ef5e4bb12c958d0"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/RuffnecKkMapSenseMapgen.exe",
+      "bytes": 11894784,
+      "sha256": "53e6ba4270d51cc0fa40898ef75586b3098dec5ed48119309fceeec65258d42b"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/sounds/fmmp-rune.wav",
+      "bytes": 22094,
+      "sha256": "3a00be827de6fe469e413e370f9fcdd9ebb3e0af249f6837bd5672afc7037be4"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/sounds/fmmp-set.wav",
+      "bytes": 22094,
+      "sha256": "c3defebec61e3c3ffbecc194248d96d5503cd57f920f81ab9d081f79fdf0ec41"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/sounds/fmmp-unique.wav",
+      "bytes": 22094,
+      "sha256": "5bb49c0669ecf05d4d9df2c4fb70a4142d37ff3e815336ee4a772c875c33fe3c"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/d2rloader/THIRD-PARTY-NOTICES.txt",
+      "bytes": 720,
+      "sha256": "02bcdd91488e4f7df382e6fe65c6a3f7202d817a9fdb74d8b2823883dc7aab96"
+    },
+    {
+      "path": "mods/FMMP-Experimental-R67/FMMP-Experimental-R67.mpq",
+      "bytes": 166388502,
+      "sha256": "575eccf458d2d00a38217fd4647cebd5d04b9d74329602b5eaf76d092a60f893"
+    },
+    {
+      "path": "PRUEFEN.ps1",
+      "bytes": 588,
+      "sha256": "6125e3b364f668fc78b8f878f6179f3495b76d47716118fec649a2876ab71334"
+    }
+  ]
+}

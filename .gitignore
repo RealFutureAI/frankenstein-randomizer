@@ -1,0 +1,17 @@
+/build/
+/dist/
+*.zip
+*.mpq
+*.dll
+*.exe
+*.obj
+*.res
+*.pdb
+*.exp
+*.lib
+*.log
+*.dmp
+*.d2s
+*.d2i
+.vs/
+__pycache__/
