@@ -2,16 +2,13 @@
 #include <D2RLPlugin/api.h>
 #include "curses.h"
 #include <cstring>
-
 namespace NativeProbe {
 struct Cell {
     std::uint64_t key;
     int value, pad;
 };
-
 static_assert(sizeof(Cell) == 16);
 inline int Meta = 0, Wide = 0, Aggregate = 0, OwnerId = 0, GrowthFormula = -1, RegenTimer = 0;
-
 inline void Init(unsigned char* list, Cell* cell) noexcept {
     const unsigned type = 6;
     const std::uint64_t one = 1;
@@ -20,7 +17,6 @@ inline void Init(unsigned char* list, Cell* cell) noexcept {
     std::memcpy(list + 0x38, &one, 8);
     std::memcpy(list + 0x40, &one, 8);
 }
-
 inline bool Run() noexcept {
     __try {
         // Isolated, preallocated lists: no game units, allocator, saves or globals
@@ -84,7 +80,6 @@ inline bool Run() noexcept {
         void* owner = Curses::MinionOwner(pet);
         if (owner == player)
             OwnerId = 1;
-        // Only a queued regeneration event at or after the current frame should block a new one.
         alignas(8) unsigned char timer[0x50]{};
         unsigned char* timerPtr = timer;
         std::memcpy(pet + 0x148, &timerPtr, 8);
@@ -102,19 +97,31 @@ inline bool Run() noexcept {
         if (Curses::RegenPending(game, pet))
             return false;
         RegenTimer = 1;
-        // The progression hook reads the compiled Decrepify formula after tables load.
         void* record = Curses::Record(3, 87);
         if (!record)
             return false;
         std::memcpy(&GrowthFormula, static_cast<unsigned char*>(record) + 0x19c, 4);
         if (GrowthFormula < 0)
             return false;
+        void* attract = Curses::Record(3, 86);
+        if (!attract)
+            return false;
+        int attractFormula = -1;
+        std::memcpy(&attractFormula, static_cast<unsigned char*>(attract) + 0x19c, 4);
+        if (attractFormula < 0)
+            return false;
+        void* soul = Curses::Record(3, 76);
+        if (!soul)
+            return false;
+        int soulFormula = -1;
+        std::memcpy(&soulFormula, static_cast<unsigned char*>(soul) + 0x19c, 4);
+        if (soulFormula < 0)
+            return false;
         return OwnerId == 1 && RegenTimer == 1;
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         return false;
     }
 }
-
 inline void __cdecl OnTables(const D2RL::PluginContext* context,
                              const D2RL::Lifecycle::DataTablesLoadedEvent*, void*) noexcept {
     const bool ok = Run();
@@ -128,23 +135,45 @@ inline void __cdecl OnTables(const D2RL::PluginContext* context,
     else
         context->api->logError(context, message);
 }
-
+inline void __cdecl OnMonsterDeath(const D2RL::PluginContext*,
+                                   const D2RL::Lifecycle::MonsterDeathEvent* event,
+                                   void*) noexcept {
+    if (!event || event->structSize < D2RL::Lifecycle::MonsterDeathEventRequiredSize ||
+        event->monster.type != D2RL::Lifecycle::UnitType::Monster)
+        return;
+    void* game = SoulHarvest::Session;
+    if (!game || game != Curses::ObservedGame)
+        return;
+    void* corpse = Curses::Find(game, 1, event->monster.id);
+    if (!Curses::Monster(corpse) || static_cast<unsigned*>(corpse)[1] != event->monster.classId)
+        return;
+    void* mark = Ramp::OriginalList(corpse, SoulHarvest::CurseState);
+    if (!mark || Ramp::Skill(mark) != SoulHarvest::Skill)
+        return;
+    // Snapshot the drop now. The next server-frame hook creates the pickup.
+    SoulHarvest::QueueDrop(game, corpse, Curses::Caster(game, mark), Curses::ListLevel(mark));
+}
 inline bool Register(const D2RL::PluginContext* context) noexcept {
     if (context->api->apiSize < D2RL::PluginApiQueryServiceSize || !context->api->queryService)
         return false;
     const void* service = nullptr;
-    if (context->api->queryService(context, D2RL::ServiceId::Lifecycle, 1, &service)
-            != D2RL::ServiceQueryResult::Success
-        || !service)
+    if (context->api->queryService(context, D2RL::ServiceId::Lifecycle, 1, &service) !=
+            D2RL::ServiceQueryResult::Success ||
+        !service)
         return false;
     auto* lifecycle = static_cast<const D2RL::LifecycleService*>(service);
-    if (!D2RL::HasLifecycleServiceField(lifecycle, D2RL::LifecycleServiceSize)
-        || !lifecycle->registerDataTablesLoadedListener)
+    if (!D2RL::HasLifecycleServiceField(lifecycle, D2RL::LifecycleServiceSize) ||
+        !lifecycle->registerDataTablesLoadedListener || !lifecycle->registerMonsterDeathListener)
         return false;
     D2RL::Lifecycle::DataTablesLoadedListener listener{
         D2RL::Lifecycle::DataTablesLoadedListenerSize, 0, &OnTables, nullptr};
     D2RL::Lifecycle::ListenerHandle handle = 0;
-    return lifecycle->registerDataTablesLoadedListener(context, &listener, &handle)
-           == D2RL::Lifecycle::Result::Success;
+    if (lifecycle->registerDataTablesLoadedListener(context, &listener, &handle) !=
+        D2RL::Lifecycle::Result::Success)
+        return false;
+    D2RL::Lifecycle::MonsterDeathListener deaths{D2RL::Lifecycle::MonsterDeathListenerSize, 0,
+                                                 &OnMonsterDeath, nullptr};
+    return lifecycle->registerMonsterDeathListener(context, &deaths, &handle) ==
+           D2RL::Lifecycle::Result::Success;
 }
 } // namespace NativeProbe

@@ -1,6 +1,6 @@
 {
-  "package": "Frankenstein-Randomizer-0.5.13-Portable",
-  "curse_version": "0.5.13",
+  "package": "Frankenstein-Randomizer-0.5.22-Portable",
+  "curse_version": "0.5.22",
   "loader_version": "1.3.1-beta",
   "tested_game_build": "3.3.93847",
   "mod_name": "FMMP-Experimental-R67",
@@ -29,8 +29,8 @@
     },
     {
       "path": "Dokumentation/AENDERUNGEN.txt",
-      "bytes": 1599,
-      "sha256": "58958787945ba8451df1b7b08d8d8de9138a58d69aa54517dabea84687af0845"
+      "bytes": 2148,
+      "sha256": "94e2ff4c12b07e665bc85fe5f8f6164010028ab10ae10c615cf31c24fcb24e4f"
     },
     {
       "path": "Dokumentation/QUELLEN.txt",
@@ -39,8 +39,8 @@
     },
     {
       "path": "Dokumentation/SYNERGIEN.txt",
-      "bytes": 2067,
-      "sha256": "09968c9c3788878606fb1d6c3d48a8ce60e65e553a875f243b797bcb893e4b02"
+      "bytes": 2285,
+      "sha256": "a3bb74ca157eafe25f5a0fe7e36505605eb4d8aff94767dda7430f21c766da47"
     },
     {
       "path": "FMMP_STARTEN.cmd",
@@ -50,7 +50,7 @@
     {
       "path": "LIESMICH.txt",
       "bytes": 2485,
-      "sha256": "b3d6236403f83aa3f6e6c46116e9b467af737cf3cd6ba573b037ed910a58333d"
+      "sha256": "6b1dc00d614dc0c94754c52858bc781e228bce978165411656b7017642fc955e"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/config/d2rloader.toml",
@@ -140,27 +140,27 @@
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-auto-collectibles.dll",
       "bytes": 147456,
-      "sha256": "1f4a02fcd0260fb66bbf8dd7ad66b853171560183f7a0e6b125f8149392fbc1b"
+      "sha256": "2b4f6fbb09104f66034d6df5797d31bb32374f9866c1b64bcdfa12f344d34abb"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-collectibles.dll",
       "bytes": 235008,
-      "sha256": "b2d4e1f3c7ea9c75dba0f0997e025f112628170544c61abaa44dea1512c75532"
+      "sha256": "e012224b7157a3cca651d2a9b1e0279978a30bca1bbb27618a0757a355dd3875"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-completed-will.dll",
       "bytes": 116224,
-      "sha256": "544f53593d90f3cc4a5d2bb02b0fb6933c160f565c93d1f46e8b820f6c082454"
+      "sha256": "43e7fdb4f2608643e703e77c6d1f493427cc8e4f7501eeace23897d5c506bea8"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-encounters.dll",
       "bytes": 179200,
-      "sha256": "54af2325fff59c530d773558739d76966c012b944f84678d4be46ac90749a2b5"
+      "sha256": "0ffc7107fc9c42c75737d964d21c88dd4c7b61fc4860f773a189d213711d8903"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-gauntlet-lab.dll",
       "bytes": 472576,
-      "sha256": "5a57c827c908498d5cb234db7436f618fc54cc365c809ad2c9fc1f0f341269e3"
+      "sha256": "99abebf5b499472fc1f32509f376fabd034a00cfebf7f51a349ce52605bf9384"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-goblins.dll",
@@ -170,7 +170,7 @@
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-loot-alerts.dll",
       "bytes": 330240,
-      "sha256": "83a472f7602e39f7a6c73e5168fda08813fa25070afdf818eee3550af8204ffe"
+      "sha256": "25d136b222e35f52af196f29ec5ff26dfba990d5eb914874f147f24fae3f5db1"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-mercenary-charms.dll",
@@ -185,27 +185,27 @@
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-monster-display.dll",
       "bytes": 149504,
-      "sha256": "3df18b024370b9b93125f722105a85bc70ff89408bfe5024aec374fd3341f722"
+      "sha256": "bbe3096bfb84114334768a93e7a4ba975418a1b9fb5c6c4a3f81cd7a46d5ce36"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-personal-loot.dll",
       "bytes": 267264,
-      "sha256": "87a478ef59c1a02509fd41da38a564ebff751e53f8e1cf7ebdf6a2b5983d3f2c"
+      "sha256": "17813696336a28d55883bc62c5b5248b63cc37515deaf840fb3c86267660d105"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-plague-trace.dll",
-      "bytes": 34816,
-      "sha256": "c33f2229279ca6232481e5d94aeff0cc2805d0eb210252d9f5dc079495f7f576"
+      "bytes": 43008,
+      "sha256": "6ee8c4c8ca1d7b88f1e725df01d9169fe2754779d93d7d8a06c584e24b235bce"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-progression-save.dll",
       "bytes": 208896,
-      "sha256": "ce2d60282a985bf2fa343c81910180bb3d33cc191620ef8d3fd9740b71b1a589"
+      "sha256": "af0267c036e9b09f44bfb31ac78024472d22c53f4a4ee9d86401a69d36d61d6c"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-reward-fixes.dll",
       "bytes": 374784,
-      "sha256": "1dc60a3952446c226ac81f7ea505ca6220e0b88ff39a2f7a16d60f5b642bf8d4"
+      "sha256": "0a93d4215c0285fc99f6d140eea82644b840b643b6e83af050ea88f338ae84a5"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-rotw-guard.dll",
@@ -215,12 +215,12 @@
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-runewords.dll",
       "bytes": 143360,
-      "sha256": "5393ca2157e876bf379d8c391be185125b0c87b548d09c26e039bae6622e3ac3"
+      "sha256": "5da00a46c4bc1e97c46e12d4ab45feb0166a48f752b95ab1c08501cb48b9702e"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/fmmp-set-charms.dll",
       "bytes": 158720,
-      "sha256": "750c2963373d3c3af8a0d7fbdc509437913a1467d223ecca6ef5e4bb12c958d0"
+      "sha256": "e18844086f5336d4d96953d7ced20281c7899504cc2015f0c6d6d74cdad6333e"
     },
     {
       "path": "mods/FMMP-Experimental-R67/d2rloader/plugins/RuffnecKkMapSenseMapgen.exe",
@@ -249,8 +249,8 @@
     },
     {
       "path": "mods/FMMP-Experimental-R67/FMMP-Experimental-R67.mpq",
-      "bytes": 166388502,
-      "sha256": "575eccf458d2d00a38217fd4647cebd5d04b9d74329602b5eaf76d092a60f893"
+      "bytes": 170204701,
+      "sha256": "2603713f63c44a8b80f3ea9102abea810dac020e72e0d73f6257dc36d3cbc554"
     },
     {
       "path": "PRUEFEN.ps1",

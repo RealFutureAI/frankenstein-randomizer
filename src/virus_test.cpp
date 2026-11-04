@@ -42,6 +42,7 @@ static int __fastcall FakeOriginal(void* game, int event, void* source, void* ta
     return 1;
 }
 
+// Fake native callbacks let the test verify the order and deduplication of a nested death chain.
 int main() {
     Virus::Find = &FakeFind;
     Virus::Cast = &FakeCast;

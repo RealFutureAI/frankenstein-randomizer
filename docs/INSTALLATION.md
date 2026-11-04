@@ -2,9 +2,9 @@
 
 ## Download the playable package
 
-Use the named `Frankenstein-Randomizer-0.5.13-Portable.zip` asset from the [v0.5.13 release](https://github.com/RealFutureAI/frankenstein-randomizer/releases/tag/v0.5.13). GitHub's “Source code” ZIP and TAR downloads contain this small documentation/source repository, not the playable modpack.
+Use the named `Frankenstein-Randomizer-0.5.22-Portable.zip` asset from the [v0.5.22 release](https://github.com/RealFutureAI/frankenstein-randomizer/releases/tag/v0.5.22). GitHub's “Source code” ZIP and TAR downloads contain this small documentation/source repository, not the playable modpack.
 
-The package is **222,671,939 bytes** and includes the complete configured mod, 19 matching DLL plugins, the map helper, sounds, mod settings, license notices, and the matching clean D2RLoader release.
+The package is **226,486,913 bytes** and includes the complete configured mod, 19 matching DLL plugins, the map helper, sounds, mod settings, license notices, and the matching clean D2RLoader release.
 
 ## Required software
 
@@ -32,16 +32,16 @@ Do not rename the technical mod folder or its MPQ. The plugin is scoped to `FMMP
 
 ## Verify the download
 
-The release includes a separate `.sha256` file. The v0.5.13 portable ZIP hash is:
+The release includes a separate `.sha256` file. The v0.5.22 portable ZIP hash is:
 
 ```text
-c92db9bc3b1dcb2de01892354adabe8ae816d62138c5a1e3dba2f36eac11365e
+0f38adbb098242459c9d43ce0089ec6405ca8ca916bed31a9dfa04089bf2542f
 ```
 
 For example, in PowerShell:
 
 ```powershell
-Get-FileHash -LiteralPath .\Frankenstein-Randomizer-0.5.13-Portable.zip -Algorithm SHA256
+Get-FileHash -LiteralPath .\Frankenstein-Randomizer-0.5.22-Portable.zip -Algorithm SHA256
 ```
 
 After extraction and **before the first launch**, the included `PRUEFEN.ps1` can compare the 50 payload files with `DATEIEN-SHA256.json` without changing them. Configuration files can legitimately change after you run the game or edit options, so this is an initial-installation check rather than a permanent requirement that every config remain unchanged.
@@ -74,7 +74,7 @@ To revert, restore the matching older mod/loader setup and a compatible save bac
 | --- | --- |
 | Launcher cannot find `D2R.exe` | The ZIP was probably extracted into a nested folder. Move its contents next to the existing game executable. |
 | Wrong or missing mod | Check the selected mod in D2RLoader; keep the exact technical folder name. |
-| Curses behave like the old version | Confirm that both the v0.5.13 MPQ and `fmmp-plague-trace.dll` were installed, and that mod extensions are enabled. |
+| Curses behave like the old version | Confirm that both the v0.5.22 MPQ and `fmmp-plague-trace.dll` were installed, and that mod extensions are enabled. |
 | Plugin refuses to load after an update | Compare game/loader versions with the tested configuration. Native hook addresses are build-specific. |
 | File verification differs after playing | Config changes are expected. Verify a freshly extracted copy to distinguish edited settings from a damaged download. |
 | Combat regression | Report the release, skill level, difficulty, relevant synergies, other active curses, and exact steps. Attach only relevant logs after reviewing their contents. |

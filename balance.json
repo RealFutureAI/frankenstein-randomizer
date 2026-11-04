@@ -1,5 +1,5 @@
 {
-  "version": "0.5.13",
+  "version": "0.5.22",
   "synergies": {
     "66": {
       "name": "Plague",
@@ -24,13 +24,13 @@
       "label": "FMMPPlagueDamagePerLevel"
     },
     "76": {
-      "name": "Life Tap",
-      "percent": 10,
+      "name": "Soul Harvest",
+      "percent": 3,
       "sources": [
         81,
         86
       ],
-      "effect": "life_tap_healing",
+      "effect": "soul_pickup_life_and_mana_recovery",
       "label": "FMMPSynHealing"
     },
     "81": {
@@ -51,7 +51,7 @@
         87,
         77
       ],
-      "effect": "death_explosion_damage",
+      "effect": "flat_physical_hit_and_death_explosion_damage",
       "label": "FMMPSynExplosion"
     },
     "87": {
@@ -89,10 +89,11 @@
   },
   "balance": {
     "lower_resist": "Base resistance-reduction curve halved; 0.75% relative synergy per hard point, calculated as integer ratio 3/4 without truncating coefficient. All six resistance types retained.",
-    "decrepify": "Start 0%, +3 percentage points per second before existing 5% synergies; 90% cap, all-target frame pump and immunity penalty retained. Noncombat metadata guarantees zero-strength state attaches.",
+    "decrepify": "Starts at 0%, adds 3 percentage points per second before 5% relative growth synergies, and caps at 90%. Cast radius grows with skill level. Progression applies to eligible targets on Hell.",
     "plague_infection": "10% poison damage per hard point, same sources; spread helper matches manual Infection.",
     "infection_death": "33% corpse base-life explosion, min=max; radius, half physical/fire split and guaranteed spread unchanged.",
-    "attract": "8% synergy sources Confuse, Decrepify, Infection; replaces Lower Resist in helper damage formulas and tooltip.",
-    "elemental": "All fire/cold/lightning base and level damage halved by reducing HitShift one bit; existing 15% synergies, 3-second fire cadence, cold duration/radius and lightning jumps retained."
+    "attract": "Flat physical damage per qualifying hit starts at 50 and gains 15 per additional level. The explosion starts at 60% of corpse base life and gains one radius unit per additional level. Confuse, Decrepify, and Infection each add 8% to both damage effects per hard point.",
+    "elemental": "All fire/cold/lightning base and level damage halved by reducing HitShift one bit; existing 15% synergies, 3-second fire cadence, cold duration/radius and lightning jumps retained.",
+    "soul_harvest": "Per soul, restore (1 + 0.3 * effective level)% Life and Mana before 3% relative healing per Confuse or Attract hard point. Add (0.5 + 0.08 * effective level)% maximum Life and Mana for 15 seconds per pickup."
   }
 }

@@ -2,18 +2,15 @@
 #include <cassert>
 #include <map>
 #include <vector>
-
 struct Unit {
     unsigned type = 1, txt = 0, id = 100, mode = 0;
     int x = 50, y = 60;
     std::map<int, int> stats;
 };
-
 struct List {
     int skill = 0, level = 3;
     std::map<int, int> stats;
 };
-
 static Unit player, monster, skeleton, clock;
 static List mark, pest, viral;
 static std::map<int, List*> marks;
@@ -21,48 +18,37 @@ alignas(8) static unsigned char game[0x180]{};
 static int originalChecks = 0, registrations = 0, created = 0, casts = 0, updates = 0;
 static int lastSkill = 0;
 static bool masteryExpected = false;
-
 static void* __fastcall ListFor(void*, int state) {
     auto i = marks.find(state);
     return i != marks.end() ? i->second : nullptr;
 }
-
 static int __fastcall Get(unsigned char, void* p, int stat, unsigned) {
     return static_cast<List*>(p)->stats[stat];
 }
-
 static void __fastcall Set(unsigned char, void* p, int stat, int v, unsigned) {
     static_cast<List*>(p)->stats[stat] = v;
 }
-
 static int __fastcall UnitGet(void* p, int stat, unsigned) {
     return static_cast<Unit*>(p)->stats[stat];
 }
-
 static void __fastcall UnitSet(void* p, int stat, int v, unsigned) {
     static_cast<Unit*>(p)->stats[stat] = v;
 }
-
 static int __fastcall Skill(void* p) {
     return static_cast<List*>(p)->skill;
 }
-
 static int __fastcall Level(void* p) {
     return static_cast<List*>(p)->level;
 }
-
 static int __fastcall OwnerId(void*) {
     return int(player.id);
 }
-
 static int __fastcall OwnerType(void*) {
     return 0;
 }
-
 static void* __fastcall Owner(void*, void*) {
     return &player;
 }
-
 static void* __fastcall Find(void*, int type, unsigned id) {
     if (type == 3 && id == clock.id)
         return &clock;
@@ -70,43 +56,34 @@ static void* __fastcall Find(void*, int type, unsigned id) {
         return &monster;
     return type == 0 && id == player.id ? &player : nullptr;
 }
-
 static void* __fastcall Game(void*) {
     return game;
 }
-
 static void* __fastcall Flag(void*, int) {
     return &pest;
 }
-
 static int __fastcall Check(void*, int) {
     ++originalChecks;
     return 1;
 }
-
 static int __fastcall X(void* u) {
     return static_cast<Unit*>(u)->x;
 }
-
 static int __fastcall Y(void* u) {
     return static_cast<Unit*>(u)->y;
 }
-
 static void __fastcall Update(void*, const char*, int) {
     ++updates;
 }
-
 static void __fastcall Schedule(void*, void*, int, int, int, int, int) {
 }
-
 static void __fastcall Register(void*, void* target, int skill, int, int, int group, int state,
                                 void* caster, const short* events, const short* funcs, int count) {
     assert(target == &monster && caster == &player && group == 1 && count == 4);
-    assert((skill == 81 && state == 59 && events[0] == 5 && funcs[0] == 4)
-           || (skill == 86 && state == 57 && events[0] == 10 && funcs[0] == 33));
+    assert((skill == 81 && state == 59 && events[0] == 5 && funcs[0] == 4) ||
+           (skill == 86 && state == 57 && events[0] == 10 && funcs[0] == 33));
     ++registrations;
 }
-
 static void* __fastcall Apply(void* raw) {
     auto* c = static_cast<Curses::Curse*>(raw);
     assert((Curses::OnFlag(c->target, 32) == marks[c->state]) == masteryExpected);
@@ -115,7 +92,6 @@ static void* __fastcall Apply(void* raw) {
     marks[c->state] = &mark;
     return &mark;
 }
-
 static void* __fastcall Create(void*, void* raw) {
     auto* p = static_cast<Pulse::Params*>(raw);
     assert(p->owner == &player);
@@ -123,31 +99,50 @@ static void* __fastcall Create(void*, void* raw) {
     ++created;
     return p->missile == 755 ? &clock : nullptr;
 }
-
 static int __fastcall Cast(void* caster, int skill, int, void* target, int) {
     assert(caster == &player && target == &monster);
     ++casts;
     lastSkill = skill;
     return 1;
 }
-
 static int __fastcall MissileTick(void* g, void*) {
     Curses::ElementHit(g, &monster);
     return 42;
 }
-
 static int __fastcall ClockNativeTick(void*, void*) {
     return 42;
 }
-
 static void Frame(unsigned n) {
     *reinterpret_cast<unsigned*>(game + 0x170) = n;
 }
-
+static unsigned char attractRecord[0x200]{};
+static void* __fastcall Record(unsigned char, int skill) {
+    assert(skill == 86);
+    return attractRecord;
+}
+static int __fastcall Evaluate(unsigned char, void* owner, int formula, int skill, int level) {
+    assert(owner == &player && formula == 17 && skill == 86 && level == 3);
+    return 100; // Level 3 base 80 plus the mock caster's synergy.
+}
+static int appliedTotal = 0, appliedPhysical = 0, hitCalls = 0;
+static void __fastcall HitLeech(void*, void*, void*, void* damage) {
+    auto* raw = static_cast<unsigned char*>(damage);
+    std::memcpy(&appliedPhysical, raw + 0x18, 4);
+    std::memcpy(&appliedTotal, raw + 0x134, 4);
+    ++hitCalls;
+}
+static void Hit(unsigned short flags, int total, int physical) {
+    unsigned char raw[0x160]{};
+    std::memcpy(raw + 4, &flags, 2);
+    std::memcpy(raw + 0x18, &physical, 4);
+    std::memcpy(raw + 0x134, &total, 4);
+    Curses::OnHitLeech(game, &player, &monster, raw);
+}
+// Bind stand-ins for the engine callbacks so curse state and resolved hit effects can be inspected.
 int main() {
-    assert(Curses::DecrepStrength(24) == 0 && Curses::DecrepStrength(25) == 3
-           && Curses::DecrepStrength(375) == 45 && Curses::DecrepStrength(400) == 48
-           && Curses::DecrepStrength(750) == 90 && Curses::DecrepStrength(4000) == 90);
+    assert(Curses::DecrepStrength(24) == 0 && Curses::DecrepStrength(25) == 3 &&
+           Curses::DecrepStrength(375) == 45 && Curses::DecrepStrength(400) == 48 &&
+           Curses::DecrepStrength(750) == 90 && Curses::DecrepStrength(4000) == 90);
     player.type = 0;
     player.id = 1;
     monster.stats[6] = 1000;
@@ -194,7 +189,34 @@ int main() {
     c.state = 57;
     marks[57] = &viral;
     Curses::OnApply(&c);
-    assert(registrations == 3 && mark.stats[36] == -15);
+    assert(registrations == 3 && mark.stats[36] == 0);
+    Curses::OriginalHitLeech = &HitLeech;
+    Hit(1, 25 * 256, 10 * 256);
+    assert(appliedTotal == 105 * 256 && appliedPhysical == 90 * 256);
+    int formula = 17;
+    std::memcpy(attractRecord + 0x19c, &formula, 4);
+    Curses::Record = &Record;
+    Curses::Evaluate = &Evaluate;
+    monster.stats[36] = 50;
+    Hit(1, 25 * 256, 0);
+    assert(appliedTotal == 75 * 256 && appliedPhysical == 50 * 256);
+    Hit(3, 25 * 256, 0);
+    assert(appliedTotal == 25 * 256 && appliedPhysical == 0);
+    Hit(33, 25 * 256, 0);
+    assert(appliedTotal == 25 * 256 && appliedPhysical == 0);
+    Hit(0, 25 * 256, 0);
+    assert(appliedTotal == 25 * 256 && appliedPhysical == 0);
+    Hit(1, 0, 0);
+    assert(appliedTotal == 0 && appliedPhysical == 0);
+    monster.stats[36] = 100;
+    Hit(1, 25 * 256, 0);
+    assert(appliedTotal == 25 * 256 && appliedPhysical == 0);
+    monster.stats[36] = 0;
+    marks.erase(57);
+    Hit(1, 25 * 256, 0);
+    assert(appliedTotal == 25 * 256 && hitCalls == 8);
+    Curses::Record = nullptr;
+    Curses::Evaluate = nullptr;
     marks.clear();
     mark = {};
     mark.skill = 87;
@@ -216,7 +238,7 @@ int main() {
     monster.stats[36] = 100;
     Frame(525);
     Curses::Tick(game, &monster);
-    assert(mark.stats[36] == -10);
+    assert(mark.stats[36] == -51);
     marks.clear();
     mark = {};
     mark.skill = 82;
@@ -258,8 +280,8 @@ int main() {
     Curses::ElementHit(game, &monster);
     assert(casts == 1);
     Curses::ProcDepth = 0;
-    assert(Curses::LordChance(0) == 0 && Curses::LordChance(1) == 2 && Curses::LordChance(20) == 21
-           && Curses::LordChance(200) == 100);
+    assert(Curses::LordChance(0) == 0 && Curses::LordChance(1) == 2 &&
+           Curses::LordChance(20) == 21 && Curses::LordChance(200) == 100);
     player.stats[409] = 99;
     Frame(300);
     Curses::SkeletonHit(game, &skeleton, &monster);
@@ -348,5 +370,5 @@ int main() {
     Curses::Pump(game);
     assert(Curses::GroupFor(game, 1)->count == 0);
     std::puts(
-        "PASS: mastery; Attract physical vulnerability; Decrepify cap/immunity; elemental cooldowns; skeleton procs; no self-procs; three-second fire pulses without movement refreshes; frame/death/expiry guards.");
+        "PASS: mastery; Attract flat physical hit bonus, synergy and hit guards; full Decrepify reduction on immunes; elemental cooldowns; skeleton procs; fire cadence and expiry guards.");
 }

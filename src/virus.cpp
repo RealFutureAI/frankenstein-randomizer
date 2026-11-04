@@ -5,6 +5,7 @@
 #include "pulse_native.h"
 #include "curses.h"
 #include "curses_native.h"
+#include "soul_harvest.h"
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -12,12 +13,11 @@
 #include <windows.h>
 
 namespace Virus {
-// Queue unit identities so each event can look up live pointers when it runs.
+// Queue unit identities so pending events can look up live pointers when they run.
 struct Identity {
     unsigned type = 0xffffffffU;
     unsigned id = 0xffffffffU;
 };
-
 struct Packet {
     void* game = nullptr;
     int event = 0;
@@ -25,13 +25,11 @@ struct Packet {
     int skill = 77;
     Identity corpse{}, killer{}, owner{};
 };
-
 struct Chain {
     std::array<Packet, 4096> packets{};
     unsigned size = 0;
     unsigned next = 0;
 };
-
 using EventFn = int(__fastcall*)(void*, int, void*, void*, void*, int, int, std::uintptr_t,
                                  std::uintptr_t);
 using FindFn = void*(__fastcall*)(void*, int, unsigned);
@@ -42,12 +40,10 @@ static CastFn Cast = nullptr;
 static const D2RL::PluginContext* Context = nullptr;
 static thread_local Chain* Active = nullptr;
 static unsigned Logs = 0;
-
 static void Log(const char* text) noexcept {
     if (Context && Context->api && Context->api->logInfo)
         Context->api->logInfo(Context, text);
 }
-
 static bool ReadUnit(void* unit, Identity& out) noexcept {
     __try {
         if (!unit)
@@ -59,7 +55,6 @@ static bool ReadUnit(void* unit, Identity& out) noexcept {
         return false;
     }
 }
-
 static bool ReadOwner(std::uintptr_t pointer, Identity& out) noexcept {
     __try {
         if (!pointer)
@@ -71,13 +66,12 @@ static bool ReadOwner(std::uintptr_t pointer, Identity& out) noexcept {
         return false;
     }
 }
-
-// A corpse can trigger each curse once per chain, even if a nested kill reports it again.
+// Nested deaths can report the same corpse again. Allow one event per corpse and curse.
 static bool Enqueue(Chain& chain, const Packet& packet) noexcept {
     for (unsigned i = 0; i < chain.size; ++i) {
         const auto& p = chain.packets[i];
-        if (p.game == packet.game && p.corpse.type == packet.corpse.type
-            && p.corpse.id == packet.corpse.id && p.skill == packet.skill)
+        if (p.game == packet.game && p.corpse.type == packet.corpse.type &&
+            p.corpse.id == packet.corpse.id && p.skill == packet.skill)
             return true;
     }
     if (chain.size == chain.packets.size()) {
@@ -87,7 +81,8 @@ static bool Enqueue(Chain& chain, const Packet& packet) noexcept {
     chain.packets[chain.size++] = packet;
     return true;
 }
-
+// Spread Infection before applying the native death explosion. The outer queue drains any
+// nested deaths after the current native callback releases its proc lock.
 static int Process(const Packet& p) noexcept {
     void* corpse = Find(p.game, static_cast<int>(p.corpse.type), p.corpse.id);
     void* caster = Find(p.game, static_cast<int>(p.owner.type), p.owner.id);
@@ -113,7 +108,7 @@ static int Process(const Packet& p) noexcept {
     }
     return result;
 }
-
+// Route custom curse events here and let the original handler process other native events.
 static int __fastcall OnEvent(void* game, int event, void* source, void* target, void* damage,
                               int skill, int level, std::uintptr_t a8, std::uintptr_t a9) noexcept {
     if (skill == 70)
@@ -123,6 +118,12 @@ static int __fastcall OnEvent(void* game, int event, void* source, void* target,
             Curses::ElementHit(game, source);
         return 1;
     }
+    if (skill == SoulHarvest::Skill && event == 10) {
+        Identity owner{};
+        if (Find && ReadOwner(a9, owner) && owner.type == 0)
+            SoulHarvest::QueueDrop(game, source, Find(game, 0, owner.id), level);
+        return 1;
+    }
     if (skill != 66 && skill != 86 && skill != 77 && skill != 444)
         return Original(game, event, source, target, damage, skill, level, a8, a9);
     Packet packet{};
@@ -130,8 +131,8 @@ static int __fastcall OnEvent(void* game, int event, void* source, void* target,
     packet.event = event;
     packet.level = level;
     packet.skill = skill == 444 ? 77 : skill;
-    if (!Find || !Cast || !ReadUnit(source, packet.corpse) || packet.corpse.type != 1
-        || !ReadOwner(a9, packet.owner) || packet.owner.type != 0 || level < 1) {
+    if (!Find || !Cast || !ReadUnit(source, packet.corpse) || packet.corpse.type != 1 ||
+        !ReadOwner(a9, packet.owner) || packet.owner.type != 0 || level < 1) {
         return Original(game, event, source, target, damage, skill == 444 ? 77 : skill, level, a8,
                         a9);
     }
@@ -140,7 +141,6 @@ static int __fastcall OnEvent(void* game, int event, void* source, void* target,
     if (Active) {
         return Enqueue(*Active, packet) ? 1 : 0;
     }
-    // The outer callback drains nested deaths after the current native proc returns.
     Chain chain{};
     Enqueue(chain, packet);
     Active = &chain;
@@ -166,25 +166,23 @@ static constexpr D2RL::PluginInfo Info = {
     4,
     "fmmp-plague-trace",
     "Frankenstein Curse Overhaul",
-    "0.5.13",
+    "0.5.22",
     "Local mod customization",
-    "Native death-event adapter for corpse explosion infection chains",
+    "Native death-event adapter for corpse explosion infection chains and Soul Harvest",
     D2RL::PluginFlags::Server | D2RL::PluginFlags::NativeHooks | D2RL::PluginFlags::ModScopedOnly,
     {}};
-
 D2RL_PLUGIN_EXPORT const D2RL::PluginInfo* D2RLoaderGetPluginInfo() noexcept {
     return &Info;
 }
-
+// Check the engine signatures before binding the build-specific addresses and installing hooks.
 D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexcept {
-    if (!c || c->contextSize < offsetof(D2RL::PluginContext, activeMod) + sizeof(c->activeMod)
-        || !c->api
-        || c->api->apiSize
-               < offsetof(D2RL::PluginApi, installInlineHook) + sizeof(c->api->installInlineHook)
-        || !c->api->installInlineHook || !c->api->checkExpectedBytes || !c->activeMod
-        || std::strcmp(c->activeMod, "FMMP-Experimental-R67"))
+    if (!c || c->contextSize < offsetof(D2RL::PluginContext, activeMod) + sizeof(c->activeMod) ||
+        !c->api ||
+        c->api->apiSize <
+            offsetof(D2RL::PluginApi, installInlineHook) + sizeof(c->api->installInlineHook) ||
+        !c->api->installInlineHook || !c->api->checkExpectedBytes || !c->activeMod ||
+        std::strcmp(c->activeMod, "FMMP-Experimental-R67"))
         return false;
-    // These signatures identify the engine routines for the supported game build.
     const unsigned char eventBytes[] = {0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x6c,
                                         0x24, 0x10, 0x48, 0x89, 0x74, 0x24, 0x20};
     const unsigned char castBytes[] = {0x48, 0x89, 0x5c, 0x24, 0x10, 0x48, 0x89, 0x6c,
@@ -192,29 +190,29 @@ D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexce
                                        0x41, 0x56, 0x41, 0x57, 0x48, 0x83, 0xec, 0x70};
     const unsigned char findBytes[] = {0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74,
                                        0x24, 0x18, 0x57, 0x48, 0x83, 0xec, 0x20};
-    if (!c->api->checkExpectedBytes(c, 0x5896e0, castBytes, sizeof(castBytes))
-        || !c->api->checkExpectedBytes(c, 0x48fe80, findBytes, sizeof(findBytes)))
+    if (!c->api->checkExpectedBytes(c, 0x5896e0, castBytes, sizeof(castBytes)) ||
+        !c->api->checkExpectedBytes(c, 0x48fe80, findBytes, sizeof(findBytes)))
         return false;
     Virus::Context = c;
     Virus::Find = reinterpret_cast<Virus::FindFn>(c->exeBase + 0x48fe80);
     Virus::Cast = reinterpret_cast<Virus::CastFn>(c->exeBase + 0x5896e0);
     const auto check = c->api->checkExpectedBytes;
-    if (!check(c, RampNative::RegenRva, RampNative::RegenBytes, sizeof(RampNative::RegenBytes))
-        || !check(c, RampNative::HitRva, RampNative::HitBytes, sizeof(RampNative::HitBytes))
-        || !check(c, RampNative::ListRva, RampNative::ListBytes, sizeof(RampNative::ListBytes))
-        || !check(c, RampNative::GetStatRva, RampNative::GetStatBytes,
-                  sizeof(RampNative::GetStatBytes))
-        || !check(c, RampNative::SetStatRva, RampNative::SetStatBytes,
-                  sizeof(RampNative::SetStatBytes))
-        || !check(c, RampNative::GetSkillRva, RampNative::GetSkillBytes,
-                  sizeof(RampNative::GetSkillBytes)))
+    if (!check(c, RampNative::RegenRva, RampNative::RegenBytes, sizeof(RampNative::RegenBytes)) ||
+        !check(c, RampNative::HitRva, RampNative::HitBytes, sizeof(RampNative::HitBytes)) ||
+        !check(c, RampNative::ListRva, RampNative::ListBytes, sizeof(RampNative::ListBytes)) ||
+        !check(c, RampNative::GetStatRva, RampNative::GetStatBytes,
+               sizeof(RampNative::GetStatBytes)) ||
+        !check(c, RampNative::SetStatRva, RampNative::SetStatBytes,
+               sizeof(RampNative::SetStatBytes)) ||
+        !check(c, RampNative::GetSkillRva, RampNative::GetSkillBytes,
+               sizeof(RampNative::GetSkillBytes)))
         return false;
     if (!check(c, PulseNative::CreateRva, PulseNative::CreateBytes,
-               sizeof(PulseNative::CreateBytes))
-        || !check(c, PulseNative::GetUnitRva, PulseNative::GetUnitBytes,
-                  sizeof(PulseNative::GetUnitBytes))
-        || !check(c, PulseNative::SetUnitRva, PulseNative::SetUnitBytes,
-                  sizeof(PulseNative::SetUnitBytes)))
+               sizeof(PulseNative::CreateBytes)) ||
+        !check(c, PulseNative::GetUnitRva, PulseNative::GetUnitBytes,
+               sizeof(PulseNative::GetUnitBytes)) ||
+        !check(c, PulseNative::SetUnitRva, PulseNative::SetUnitBytes,
+               sizeof(PulseNative::SetUnitBytes)))
         return false;
     Ramp::GetUnit = reinterpret_cast<Ramp::UnitGetFn>(c->exeBase + PulseNative::GetUnitRva);
     Ramp::SetUnit = reinterpret_cast<Ramp::UnitSetFn>(c->exeBase + PulseNative::SetUnitRva);
@@ -225,6 +223,29 @@ D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexce
     auto checkCurse = [c](std::uint64_t rva, const unsigned char* bytes, unsigned size) {
         return c->api->checkExpectedBytes(c, rva, bytes, size);
     };
+    if (!checkCurse(SoulHarvest::RoomRva, SoulHarvest::RoomBytes, sizeof(SoulHarvest::RoomBytes)) ||
+        !checkCurse(SoulHarvest::PlayerBucketRva, SoulHarvest::PlayerBucketBytes,
+                    sizeof(SoulHarvest::PlayerBucketBytes)) ||
+        !checkCurse(SoulHarvest::RefreshRva, SoulHarvest::RefreshBytes,
+                    sizeof(SoulHarvest::RefreshBytes)) ||
+        !checkCurse(SoulHarvest::GfxStateRva, SoulHarvest::GfxStateBytes,
+                    sizeof(SoulHarvest::GfxStateBytes)) ||
+        !checkCurse(SoulHarvest::PlayerDataRva, SoulHarvest::PlayerDataBytes,
+                    sizeof(SoulHarvest::PlayerDataBytes)) ||
+        !checkCurse(SoulHarvest::PlayerClientFieldRva, SoulHarvest::PlayerClientFieldBytes,
+                    sizeof(SoulHarvest::PlayerClientFieldBytes)) ||
+        !checkCurse(SoulHarvest::SyncMissileRva, SoulHarvest::SyncMissileBytes,
+                    sizeof(SoulHarvest::SyncMissileBytes)))
+        return false;
+    SoulHarvest::Room = reinterpret_cast<SoulHarvest::RoomFn>(c->exeBase + SoulHarvest::RoomRva);
+    SoulHarvest::Refresh =
+        reinterpret_cast<SoulHarvest::RefreshFn>(c->exeBase + SoulHarvest::RefreshRva);
+    SoulHarvest::MarkGfxDirty =
+        reinterpret_cast<SoulHarvest::GfxStateFn>(c->exeBase + SoulHarvest::GfxStateRva);
+    SoulHarvest::PlayerData =
+        reinterpret_cast<SoulHarvest::PlayerDataFn>(c->exeBase + SoulHarvest::PlayerDataRva);
+    SoulHarvest::SyncMissile =
+        reinterpret_cast<SoulHarvest::SyncMissileFn>(c->exeBase + SoulHarvest::SyncMissileRva);
     if (!checkCurse(CurseNative::ApplyRva, CurseNative::ApplyBytes,
                     sizeof(CurseNative::ApplyBytes)))
         return false;
@@ -269,9 +290,9 @@ D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexce
     Curses::Game = reinterpret_cast<Curses::GameFn>(c->exeBase + CurseNative::GameRva);
     Curses::Owner = reinterpret_cast<Curses::OwnerFn>(c->exeBase + CurseNative::OwnerRva);
     if (!checkCurse(CurseNative::MinionOwnerRva, CurseNative::MinionOwnerBytes,
-                    sizeof(CurseNative::MinionOwnerBytes))
-        || !checkCurse(CurseNative::MinionOwnerTailRva, CurseNative::MinionOwnerTailBytes,
-                       sizeof(CurseNative::MinionOwnerTailBytes)))
+                    sizeof(CurseNative::MinionOwnerBytes)) ||
+        !checkCurse(CurseNative::MinionOwnerTailRva, CurseNative::MinionOwnerTailBytes,
+                    sizeof(CurseNative::MinionOwnerTailBytes)))
         return false;
     Curses::MinionOwner =
         reinterpret_cast<Curses::MinionOwnerFn>(c->exeBase + CurseNative::MinionOwnerRva);
@@ -306,6 +327,9 @@ D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexce
     if (!checkCurse(CurseNative::DamageRva, CurseNative::DamageBytes,
                     sizeof(CurseNative::DamageBytes)))
         return false;
+    if (!checkCurse(CurseNative::HitLeechRva, CurseNative::HitLeechBytes,
+                    sizeof(CurseNative::HitLeechBytes)))
+        return false;
     if (!checkCurse(CurseNative::RecordRva, CurseNative::RecordBytes,
                     sizeof(CurseNative::RecordBytes)))
         return false;
@@ -328,7 +352,6 @@ D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexce
     Ramp::NeedsTick = &Curses::NeedsTick;
     Ramp::BeforeRegen = &Curses::Pump;
 
-    // Keep each original trampoline so the hooks can still delegate to the engine.
     auto install = [c](std::uint64_t rva, const unsigned char* bytes, unsigned size, void* target,
                        void** original) {
         D2RL::InlineHookRegistration hook{};
@@ -354,7 +377,7 @@ D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexce
         return false;
     if (!install(CurseNative::MissileTickRva, CurseNative::MissileTickBytes,
                  sizeof(CurseNative::MissileTickBytes),
-                 reinterpret_cast<void*>(&Curses::OnMissileTick),
+                 reinterpret_cast<void*>(&SoulHarvest::OnMissileTick),
                  reinterpret_cast<void**>(&Curses::OriginalMissileTick)))
         return false;
     if (!install(CurseNative::GroundTickRva, CurseNative::GroundTickBytes,
@@ -363,35 +386,38 @@ D2RL_PLUGIN_EXPORT bool D2RLoaderLoadPlugin(const D2RL::PluginContext* c) noexce
                  reinterpret_cast<void**>(&Curses::OriginalGroundTick)))
         return false;
     if (!install(CurseNative::FrameRva, CurseNative::FrameBytes, sizeof(CurseNative::FrameBytes),
-                 reinterpret_cast<void*>(&Curses::OnFrame),
+                 reinterpret_cast<void*>(&SoulHarvest::OnFrame),
                  reinterpret_cast<void**>(&Curses::OriginalFrame)))
         return false;
     if (!install(CurseNative::DamageRva, CurseNative::DamageBytes, sizeof(CurseNative::DamageBytes),
                  reinterpret_cast<void*>(&Curses::OnDamage),
                  reinterpret_cast<void**>(&Curses::OriginalDamage)))
         return false;
+    if (!install(CurseNative::HitLeechRva, CurseNative::HitLeechBytes,
+                 sizeof(CurseNative::HitLeechBytes), reinterpret_cast<void*>(&Curses::OnHitLeech),
+                 reinterpret_cast<void**>(&Curses::OriginalHitLeech)))
+        return false;
     if (!install(0x42f300, eventBytes, sizeof(eventBytes), reinterpret_cast<void*>(&Virus::OnEvent),
-                 reinterpret_cast<void**>(&Virus::Original))
-        || !install(RampNative::ListRva, RampNative::ListBytes, sizeof(RampNative::ListBytes),
-                    reinterpret_cast<void*>(&Ramp::OnList),
-                    reinterpret_cast<void**>(&Ramp::OriginalList))
-        || !install(RampNative::HitRva, RampNative::HitBytes, sizeof(RampNative::HitBytes),
-                    reinterpret_cast<void*>(&Ramp::OnHit),
-                    reinterpret_cast<void**>(&Ramp::OriginalHit))
-        || !install(RampNative::RegenRva, RampNative::RegenBytes, sizeof(RampNative::RegenBytes),
-                    reinterpret_cast<void*>(&Ramp::OnRegen),
-                    reinterpret_cast<void**>(&Ramp::OriginalRegen))
-        || !install(PulseNative::CreateRva, PulseNative::CreateBytes,
-                    sizeof(PulseNative::CreateBytes), reinterpret_cast<void*>(&Pulse::OnCreate),
-                    reinterpret_cast<void**>(&Pulse::OriginalCreate)))
+                 reinterpret_cast<void**>(&Virus::Original)) ||
+        !install(RampNative::ListRva, RampNative::ListBytes, sizeof(RampNative::ListBytes),
+                 reinterpret_cast<void*>(&Ramp::OnList),
+                 reinterpret_cast<void**>(&Ramp::OriginalList)) ||
+        !install(RampNative::HitRva, RampNative::HitBytes, sizeof(RampNative::HitBytes),
+                 reinterpret_cast<void*>(&Ramp::OnHit),
+                 reinterpret_cast<void**>(&Ramp::OriginalHit)) ||
+        !install(RampNative::RegenRva, RampNative::RegenBytes, sizeof(RampNative::RegenBytes),
+                 reinterpret_cast<void*>(&Ramp::OnRegen),
+                 reinterpret_cast<void**>(&Ramp::OriginalRegen)) ||
+        !install(PulseNative::CreateRva, PulseNative::CreateBytes, sizeof(PulseNative::CreateBytes),
+                 reinterpret_cast<void*>(&Pulse::OnCreate),
+                 reinterpret_cast<void**>(&Pulse::OriginalCreate)))
         return false;
     if (!NativeProbe::Register(c))
         return false;
     Virus::Log(
-        "Curse overhaul 0.5.13 active: balance update: zero-start 3-point Decrepify growth; reduced curse/element damage; cold/lightning, curse synergies, native AI skeleton owner, wide stat layers and corpse-free summons retained.");
+        "Curse overhaul 0.5.22 active: Soul Harvest reduced base healing and restored synergy display.");
     return true;
 }
-
 D2RL_PLUGIN_EXPORT void D2RLoaderUnloadPlugin() noexcept {
     Virus::Context = nullptr;
     Ramp::Log = nullptr;

@@ -3,9 +3,7 @@
 #include "pulse.h"
 #include <algorithm>
 #include <cstddef>
-
 namespace Curses {
-// Custom stat IDs must match the mod tables. Frame counters use the 25 Hz server clock.
 constexpr int MasteryStat = 408, LordStat = 409, DecrepStart = 411, DecrepSecond = 412, Frost = 413,
               HitTime = 414, GroundTime = 415, GroundX = 416, GroundY = 417, SkeletonTime = 419,
               RandomStat = 420, LightningTime = 422;
@@ -35,6 +33,7 @@ inline MissileHitFn NativeMissileHit = nullptr;
 using DamageFn = void(__fastcall*)(void*, void*, void*, void*);
 inline DamageFn OriginalDamage = nullptr;
 inline unsigned DamageLogs = 0, OwnedDamageLogs = 0;
+inline DamageFn OriginalHitLeech = nullptr;
 using FrameFn = void(__fastcall*)(void*);
 using TimerFn = void*(__fastcall*)(void*);
 inline TimerFn UnitTimer = nullptr;
@@ -66,17 +65,15 @@ inline DamageForFn DamageFor = nullptr;
 inline ReachFn Reach = nullptr;
 inline InRangeFn InRange = nullptr;
 inline unsigned Logs = 0, LordLogs = 0;
-inline unsigned ClockLogs = 0, DecrepLogs = 0, FireLogs = 0;
+inline unsigned ClockLogs = 0, DecrepLogs = 0, DecrepApplyLogs = 0, FireLogs = 0;
 inline unsigned FireHitLogs = 0;
 inline unsigned FireAuditTarget = 0;
-// Damage from these procs must not trigger another round of elemental or skeleton procs.
 inline thread_local unsigned ProcDepth = 0;
 inline int ResolveFireHit(void* game, void* missile) noexcept;
-
 inline int MissileTick(void* game, void* missile, MissileTickFn original) noexcept {
     const unsigned id = missile ? static_cast<unsigned*>(missile)[1] : 0;
-    const bool own = (id >= 752 && id <= 754)
-                     || (id == FireMissile && Ramp::GetUnit(missile, NativeFireTag, 0) > 0);
+    const bool own = (id >= 752 && id <= 754) ||
+                     (id == FireMissile && Ramp::GetUnit(missile, NativeFireTag, 0) > 0);
     if (own)
         ++ProcDepth;
     const int result = original(game, missile);
@@ -84,7 +81,6 @@ inline int MissileTick(void* game, void* missile, MissileTickFn original) noexce
         --ProcDepth;
     return result;
 }
-
 inline int __fastcall OnMissileTick(void* game, void* missile) noexcept {
     if (missile && static_cast<unsigned*>(missile)[1] == ClockMissile)
         return 2;
@@ -92,67 +88,51 @@ inline int __fastcall OnMissileTick(void* game, void* missile) noexcept {
         return ResolveFireHit(game, missile);
     return MissileTick(game, missile, OriginalMissileTick);
 }
-
 inline int __fastcall OnGroundTick(void* game, void* missile) noexcept {
     return MissileTick(game, missile, OriginalGroundTick);
 }
-
-// Track unit ID and class so the frame pump can validate targets after looking them up.
 struct ClockTarget {
     unsigned id = 0, cls = 0;
 };
-
 struct ClockGroup {
     void* game = nullptr;
     unsigned owner = 0, lastFrame = 0, count = 0;
     bool hasFrame = false;
     std::array<ClockTarget, 4096> targets{};
 };
-
 inline std::array<ClockGroup, 16> Clocks{};
 inline void* ClockGame = nullptr;
 inline unsigned ClockEpochFrame = 0;
-
-// Native curse application payload. Field offsets are part of the hook ABI.
 struct Curse {
     void* caster;
     void* target;
     int skill, level, duration, stat, value, state;
     void* remove;
 };
-
 static_assert(offsetof(Curse, state) == 0x24 && offsetof(Curse, remove) == 0x28);
-
 struct Context {
     void* target;
     int state;
     bool stack;
     Context* previous;
 };
-
 inline thread_local Context* Active = nullptr;
-
 inline bool Player(void* p) noexcept {
     return p && *static_cast<unsigned*>(p) == 0;
 }
-
 inline bool Monster(void* p) noexcept {
     return p && *static_cast<unsigned*>(p) == 1;
 }
-
 inline bool OurSkill(int s) noexcept {
-    return s == 66 || s == 76 || s == 77 || s == 81 || s == 82 || s == 86 || s == 87 || s == 91
-           || s == 444;
+    return s == 66 || s == 76 || s == 77 || s == 81 || s == 82 || s == 86 || s == 87 || s == 91 ||
+           s == 444;
 }
-
 inline int Read(void* game, void* list, int stat) noexcept {
     return Ramp::Get(Ramp::Version(game), list, stat, 0);
 }
-
 inline void Write(void* game, void* list, int stat, int value) noexcept {
     Ramp::Set(Ramp::Version(game), list, stat, value, 0);
 }
-
 inline bool RegenPending(void* game, void* unit) noexcept {
     if (!UnitTimer || !unit)
         return false;
@@ -171,35 +151,27 @@ inline bool RegenPending(void* game, void* unit) noexcept {
     }
     return timer != nullptr; // Fail closed on an unexpectedly long/cyclic list.
 }
-
 inline void* Caster(void* game, void* list) noexcept {
     return list ? Find(game, ListOwnerType(list), static_cast<unsigned>(ListOwnerId(list)))
                 : nullptr;
 }
-
-// With Curse Mastery, the native replacement lookup sees only the incoming curse state.
 inline void* __fastcall OnFlag(void* unit, int flag) noexcept {
     if (flag == 0x20 && Active && Active->stack && Active->target == unit)
         return Ramp::OriginalList(unit, Active->state);
     return OriginalFlag(unit, flag);
 }
-
-// Suppress the native Attract-state gate only during this stacked application.
 inline int __fastcall OnCheck(void* unit, int state) noexcept {
     if (state == 57 && Active && Active->stack && Active->target == unit)
         return 0;
     return OriginalCheck(unit, state);
 }
-
 inline void RegisterOne(void* game, const Curse& curse, short event, short function) noexcept {
     const short events[4] = {event, -1, -1, -1}, functions[4] = {function, 0, 0, 0};
     Register(game, curse.target, curse.skill, curse.level, curse.skill, 1, curse.state,
              curse.caster, events, functions, 4);
 }
-
 inline void EnsureClock(void* game, void* owner, void* unit) noexcept;
 inline void ApplyFirePulse(void* game, void* owner, void* unit, int level) noexcept;
-
 inline void* __fastcall OnApply(void* raw) noexcept {
     auto* c = static_cast<Curse*>(raw);
     if (!c || !OurSkill(c->skill) || !c->caster || !Monster(c->target))
@@ -215,19 +187,25 @@ inline void* __fastcall OnApply(void* raw) noexcept {
     Active = &context;
     void* result = OriginalApply(raw);
     Active = context.previous;
+    if (c->skill == 87 && Ramp::Log && DecrepApplyLogs++ < 48) {
+        char message[136]{};
+        std::snprintf(message, sizeof(message),
+                      "Decrepify apply: unit=%u state=%d level=%d duration=%d attached=%d",
+                      static_cast<unsigned*>(c->target)[2], c->state, c->level, c->duration,
+                      result ? 1 : 0);
+        Ramp::Log(message);
+    }
     if (!result)
         return result;
     if (c->skill == 81)
         RegisterOne(game, *c, 5, 4); // Confuse + native melee Iron Maiden.
+    if (c->skill == 76 && c->state == 776 && Player(owner))
+        RegisterOne(game, *c, 10, 33); // Soul Harvest death event.
     if (c->skill == 86) {
         RegisterOne(game, *c, 10, 33); // Attract death explosion.
-        const int vulnerability = 5 * std::clamp(c->level, 0, 1000);
-        Write(game, result, 36,
-              BaseGet(c->target, 36, 0) >= 100 ? -vulnerability / 5 : -vulnerability);
     }
     const unsigned now = Ramp::Frame(game);
     if (c->skill == 87 && !Read(game, result, DecrepStart)) {
-        // Store frame + 1 so zero still denotes uninitialized metadata.
         Write(game, result, DecrepStart, static_cast<int>(now + 1));
         Write(game, result, DecrepSecond, -1);
     }
@@ -249,7 +227,6 @@ inline void* __fastcall OnApply(void* raw) noexcept {
     }
     return result;
 }
-
 inline bool NeedsTick(void* unit) noexcept {
     if (!Monster(unit) || Ramp::GetUnit(unit, 6, 0) <= 0)
         return false;
@@ -259,7 +236,6 @@ inline bool NeedsTick(void* unit) noexcept {
                 return true;
     return false;
 }
-
 inline bool NeedsClock(void* unit) noexcept {
     if (!Monster(unit) || Ramp::GetUnit(unit, 6, 0) <= 0)
         return false;
@@ -273,28 +249,27 @@ inline bool NeedsClock(void* unit) noexcept {
         }
     return false;
 }
-
 inline int DecrepStrength(unsigned elapsed, int factor = 100) noexcept {
     const std::uint64_t gain =
         std::min(elapsed / 25, 30U) * 3ULL * std::clamp(factor, 100, 100000) / 100;
     return static_cast<int>(std::min<std::uint64_t>(90, gain));
 }
-
-inline int GrowthFactor(void* game, void* caster, int level) noexcept {
+inline int EvalCalc4(void* game, void* caster, int skill, int level, int fallback) noexcept {
     if (!Player(caster) || !Record || !Evaluate)
-        return 100;
-    void* record = Record(Ramp::Version(game), 87);
+        return fallback;
+    const auto version = Ramp::Version(game);
+    void* record = Record(version, skill);
     if (!record)
-        return 100;
+        return fallback;
     int formula = -1;
-    std::memcpy(&formula, static_cast<unsigned char*>(record) + 0x19c, 4);
-    if (formula < 0)
-        return 100;
-    return std::clamp(Evaluate(Ramp::Version(game), caster, formula, 87, level), 100, 100000);
+    std::memcpy(&formula, static_cast<unsigned char*>(record) + 0x19c, sizeof(formula));
+    return formula < 0 ? fallback : Evaluate(version, caster, formula, skill, level);
 }
-
+inline int GrowthFactor(void* game, void* caster, int level) noexcept {
+    return std::clamp(EvalCalc4(game, caster, 87, level, 100), 100, 100000);
+}
 inline void* CreateAt(void* game, void* owner, int missileId, int skill, int level, int x, int y,
-                      int tx, int ty, void* origin = nullptr) noexcept {
+                      int tx, int ty, void* origin = nullptr, int range = 0) noexcept {
     // Engine creation prefix verified against 3.3.93847; remaining fields zero.
     alignas(16) unsigned char raw[0x100]{};
     auto* p = reinterpret_cast<Pulse::Params*>(raw);
@@ -308,12 +283,14 @@ inline void* CreateAt(void* game, void* owner, int missileId, int skill, int lev
     p->targetY = ty;
     p->skill = skill;
     p->level = level;
+    if (range > 0) {
+        p->flags |= 0x8000U;
+        p->range = range;
+    }
     return Pulse::OnCreate(game, raw);
 }
-
 inline ClockGroup* GroupFor(void* game, unsigned owner) noexcept {
     const unsigned now = Ramp::Frame(game);
-    // A frame rollback can signal a new session even if the engine reuses the game pointer.
     if (ClockGame != game || now < ClockEpochFrame) {
         for (auto& g : Clocks) {
             g.game = nullptr;
@@ -338,7 +315,6 @@ inline ClockGroup* GroupFor(void* game, unsigned owner) noexcept {
     }
     return free;
 }
-
 inline void EnsureClock(void* game, void* owner, void* unit) noexcept {
     if (!Player(owner) || !Monster(unit))
         return;
@@ -361,7 +337,6 @@ inline void EnsureClock(void* game, void* owner, void* unit) noexcept {
         Ramp::Log(m);
     }
 }
-
 inline void Pump(void* game) noexcept {
     if (!game)
         return;
@@ -376,7 +351,6 @@ inline void Pump(void* game) noexcept {
     if (ClockGame == game)
         ClockEpochFrame = now;
     for (auto& group : Clocks) {
-        // The frame hook and the regen hook can both call Pump during the same frame.
         if (group.game != game || !group.count || (group.hasFrame && group.lastFrame == now))
             continue;
         group.hasFrame = true;
@@ -401,13 +375,11 @@ inline void Pump(void* game) noexcept {
         }
     }
 }
-
 inline void __fastcall OnFrame(void* game) noexcept {
     ObservedGame = game;
     OriginalFrame(game);
     Pump(game);
 }
-
 inline bool FilterFire(void* game, void* raw) noexcept {
     auto* p = static_cast<Pulse::Params*>(raw);
     if (!p)
@@ -428,7 +400,6 @@ inline bool FilterFire(void* game, void* raw) noexcept {
         return false;
     const unsigned now = Ramp::Frame(game),
                    last = static_cast<unsigned>(Read(game, mark, GroundTime));
-    // Fire starts on application and then shares this per-target cooldown with the frame pump.
     if (Read(game, mark, FireStarted) && now >= last && now - last < FireInterval)
         return false;
     Write(game, mark, FireStarted, 1);
@@ -441,7 +412,6 @@ inline bool FilterFire(void* game, void* raw) noexcept {
     p->range = 4;
     return true;
 }
-
 inline void TagFire(void*, void* raw, void* missile) noexcept {
     auto* p = static_cast<Pulse::Params*>(raw);
     if (p && p->missile == FireMissile && p->skill == 446 && Monster(p->origin)) {
@@ -451,7 +421,6 @@ inline void TagFire(void*, void* raw, void* missile) noexcept {
                       static_cast<int>(static_cast<unsigned*>(p->origin)[2] + 1U), 0);
     }
 }
-
 inline int ResolveFireHit(void* game, void* missile) noexcept {
     const unsigned tag = static_cast<unsigned>(Ramp::GetUnit(missile, NativeFireTag, 0));
     Ramp::SetUnit(missile, NativeFireTag, 0, 0);
@@ -492,7 +461,6 @@ inline int ResolveFireHit(void* game, void* missile) noexcept {
     // Exactly one attempt, even if blocked or if this callback is repeated.
     return 2;
 }
-
 inline void ApplyFirePulse(void* game, void* owner, void* unit, int level) noexcept {
     if (!Player(owner))
         return;
@@ -503,7 +471,6 @@ inline void ApplyFirePulse(void* game, void* owner, void* unit, int level) noexc
     if (!fire && Ramp::Log && FireLogs++ < 4)
         Ramp::Log("Element fire creation skipped or failed (cooldown/expired target).");
 }
-
 inline void Tick(void* game, void* unit) noexcept {
     if (!Monster(unit) || Ramp::GetUnit(unit, 6, 0) <= 0)
         return;
@@ -519,8 +486,8 @@ inline void Tick(void* game, void* unit) noexcept {
                                    GrowthFactor(game, Caster(game, l), ListLevel(l)));
                 for (int stat : {67, 68, 25})
                     Write(game, l, stat, -strength);
-                // Retain the native one-fifth penalty for an initially physical-immune unit.
-                Write(game, l, 36, BaseGet(unit, 36, 0) >= 100 ? -strength / 5 : -strength);
+                // Apply the full curse strength even to an initially physical-immune unit.
+                Write(game, l, 36, -strength);
                 Write(game, l, DecrepSecond, static_cast<int>(seconds));
                 Update(unit, "local curse progression", 0);
                 if (Ramp::Log && DecrepLogs++ < 128) {
@@ -542,7 +509,6 @@ inline void Tick(void* game, void* unit) noexcept {
                     ApplyFirePulse(game, caster, unit, ListLevel(l));
         }
 }
-
 inline void ElementHit(void* game, void* unit) noexcept {
     if (ProcDepth || !Monster(unit) || Ramp::GetUnit(unit, 6, 0) <= 0)
         return;
@@ -556,13 +522,11 @@ inline void ElementHit(void* game, void* unit) noexcept {
     if (!Player(caster))
         return;
     Write(game, l, HitTime, static_cast<int>(now));
-    // Frost counts registered hits. Lightning has its own time-based cooldown below.
     const int level = ListLevel(l), stacks = Read(game, l, Frost) + 1;
     Write(game, l, Frost, stacks < 3 ? stacks : 0);
     ++ProcDepth;
     if (stacks >= 3) {
         const int x = X(unit), y = Y(unit);
-        // The vectors approximate a circle so the Frost Nova covers all directions.
         constexpr int dirs[32][2] = {
             {32, 0},    {31, 6},    {30, 12},  {27, 18},  {23, 23},   {18, 27},   {12, 30},
             {6, 31},    {0, 32},    {-6, 31},  {-12, 30}, {-18, 27},  {-23, 23},  {-27, 18},
@@ -579,11 +543,9 @@ inline void ElementHit(void* game, void* unit) noexcept {
     }
     --ProcDepth;
 }
-
 inline int LordChance(int level) noexcept {
     return level > 0 ? std::min(100, 1 + level) : 0;
 }
-
 inline void* SkeletonOwner(void* game, void* unit) noexcept {
     // Player summons store ownership in their AI control, not in the general
     // unit owner fields used by projectiles and other temporary units.
@@ -601,7 +563,6 @@ inline void* SkeletonOwner(void* game, void* unit) noexcept {
     std::memcpy(&id, static_cast<unsigned char*>(unit) + 0xec, 4);
     return type == 0 ? Find(game, 0, id) : nullptr;
 }
-
 inline int LordLevel(void* game, void* player) noexcept {
     const int passive = std::clamp(Ramp::GetUnit(player, LordStat, 0), 0, 1000);
     if (Record && Evaluate) {
@@ -615,10 +576,9 @@ inline int LordLevel(void* game, void* player) noexcept {
     }
     return passive;
 }
-
 inline void SkeletonHit(void* game, void* skeleton, void* target) noexcept {
-    if (ProcDepth || !Monster(skeleton) || static_cast<unsigned*>(skeleton)[1] != SkeletonClass
-        || !Monster(target) || Ramp::GetUnit(target, 6, 0) <= 0)
+    if (ProcDepth || !Monster(skeleton) || static_cast<unsigned*>(skeleton)[1] != SkeletonClass ||
+        !Monster(target) || Ramp::GetUnit(target, 6, 0) <= 0)
         return;
     void* player = SkeletonOwner(game, skeleton);
     if (!Player(player))
@@ -644,7 +604,6 @@ inline void SkeletonHit(void* game, void* skeleton, void* target) noexcept {
     Ramp::SetUnit(skeleton, RandomStat, static_cast<int>(seed), 0);
     if ((seed >> 8) % 100 >= static_cast<unsigned>(chance))
         return;
-    // Only a successful roll starts the skeleton cooldown.
     Ramp::SetUnit(skeleton, SkeletonTime, static_cast<int>(now), 0);
     constexpr int skills[] = {66, 77, 76, 81, 82, 86, 87, 91};
     const int skill = skills[(seed >> 20) % 8];
@@ -658,7 +617,44 @@ inline void SkeletonHit(void* game, void* skeleton, void* target) noexcept {
         Ramp::Log(m);
     }
 }
+inline void AddAttractHit(void* game, void* defender, void* damage) noexcept {
+    if (!game || !damage || ProcDepth || !Monster(defender))
+        return;
+    auto* raw = static_cast<unsigned char*>(damage);
+    unsigned short flags = 0;
+    int physical = 0, total = 0;
+    std::memcpy(&flags, raw + 4, sizeof(flags));
+    std::memcpy(&total, raw + 0x134, sizeof(total));
+    if (!(flags & 1) || (flags & 0x22) || total <= 0)
+        return;
+    void* mark = Ramp::OriginalList(defender, 57);
+    if (!mark || Ramp::Skill(mark) != 86)
+        return;
+    const int level = ListLevel(mark);
+    if (level < 1)
+        return;
+    const int resist = std::clamp(Ramp::GetUnit(defender, 36, 0), -100, 100);
+    if (resist == 100)
+        return;
+    const int base = 50 + 15 * (std::min(level, 1000) - 1);
+    const int bonus = std::clamp(EvalCalc4(game, Caster(game, mark), 86, level, base), 0, 100000);
 
+    // The engine has already resolved resistance here. Scale only the added
+    // physical component, then update both fields before native HP subtraction.
+    std::memcpy(&physical, raw + 0x18, sizeof(physical));
+    const int scaled = static_cast<int>(std::int64_t{bonus} * 256 * (100 - resist) / 100);
+    const int extra = std::min(scaled, std::numeric_limits<int>::max() - std::max(physical, total));
+    physical += extra;
+    total += extra;
+    std::memcpy(raw + 0x18, &physical, sizeof(physical));
+    std::memcpy(raw + 0x134, &total, sizeof(total));
+}
+inline void __fastcall OnHitLeech(void* game, void* attacker, void* defender,
+                                  void* damage) noexcept {
+    if (attacker && attacker != defender)
+        AddAttractHit(game, defender, damage);
+    OriginalHitLeech(game, attacker, defender, damage);
+}
 inline void __fastcall OnDamage(void* game, void* attacker, void* defender, void* damage) noexcept {
     unsigned short flags = 0;
     if (damage)
@@ -675,7 +671,6 @@ inline void __fastcall OnDamage(void* game, void* attacker, void* defender, void
                           owned ? static_cast<unsigned*>(owner)[2] : 0);
             Ramp::Log(m);
         }
-        // Run Plague Lord only for resolved skeleton hits whose damage flags allow the proc.
         if (static_cast<unsigned*>(attacker)[1] == SkeletonClass && (flags & 1) && !(flags & 32))
             SkeletonHit(game, attacker, defender);
     }

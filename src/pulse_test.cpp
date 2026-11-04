@@ -30,6 +30,7 @@ static void __fastcall Set(void* unit, int stat, int value, unsigned) {
     processed[unit] = value;
 }
 
+// Simulate the native missile callback after an immediate cast to catch duplicate damage.
 int main() {
     Pulse::OriginalCreate = &Create;
     Ramp::OriginalHit = &Hit;

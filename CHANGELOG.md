@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.22
+
+- Soul Harvest replaces Life Tap. Each collected soul restores 1% plus 0.3 percentage points per effective skill level of both Life and Mana. Confuse and Attract add 3% relative healing per invested point.
+- Souls also grant 0.5% plus 0.08 percentage points per level to both maximums for 15 seconds. Each pickup has its own expiry.
+- The skill tooltip displays calculated healing, the temporary maximum-resource bonus, and both synergy sources.
+- Attract adds flat physical damage to qualifying hits and gains explosion radius per level. Its three synergies apply to both damage effects.
+- Decrepify's cast radius grows with skill level, and its timed progression works on eligible targets on Hell.
+- The source includes the Soul Harvest regression and English comments on the custom C++ code.
+
 ## 0.5.13
 
 - Halved Lower Resist's base effect and reduced its hard-point synergy coefficient to 0.75%.

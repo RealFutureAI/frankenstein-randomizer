@@ -2,9 +2,9 @@
 
 A portable **Diablo II: Resurrected** modpack combining **Frankenstein / FMMP Experimental R67**, prebuilt randomized game data, and a custom Necromancer curse overhaul.
 
-The current gameplay customization version is **0.5.13**. The download includes the complete configured mod, its **19 matching plugins**, and the matching **D2RLoader 1.3.1-beta**. You do not need to run ModGen or assemble several mods yourself.
+The current gameplay customization version is **0.5.22**. The download includes the complete configured mod, its **19 matching plugins**, and the matching **D2RLoader 1.3.1-beta**. You do not need to run ModGen or assemble several mods yourself.
 
-**[Download v0.5.13](https://github.com/RealFutureAI/frankenstein-randomizer/releases/tag/v0.5.13)** · [Installation](docs/INSTALLATION.md) · [Curse reference](docs/CURSES.md) · [Changelog](CHANGELOG.md)
+**[Download v0.5.22](https://github.com/RealFutureAI/frankenstein-randomizer/releases/tag/v0.5.22)** · [Installation](docs/INSTALLATION.md) · [Curse reference](docs/CURSES.md) · [Changelog](CHANGELOG.md)
 
 > **Experimental gameplay build.** Automated regression tests and startup checks pass. The latest balance values have not yet received a complete in-game combat test. This is a customized FMMP distribution, maintained independently of its upstream authors.
 
@@ -12,14 +12,14 @@ The current gameplay customization version is **0.5.13**. The download includes 
 
 - The complete, currently configured Frankenstein Randomizer MPQ, including its randomized game tables and existing base-mod content.
 - A redesigned Necromancer curse tree with **Plague**, **Infection**, **Elemental Marks**, **Curse Mastery**, and **Plague Lord**.
-- Additional effects for Confuse, Attract, Decrepify, Lower Resist, and Life Tap.
+- Soul Harvest replaces Life Tap. Confuse, Attract, Decrepify, and Lower Resist have additional effects.
 - A complete hard-point synergy system for the active curses.
 - Custom curse skill icons and recolored overhead effects.
 - Normal Skeleton Warriors that can be summoned **without a corpse**.
 - All 19 matching mod-scoped DLL plugins, the map-generation helper, mod configuration, sounds, and bundled license notices.
 - A clean, matching D2RLoader distribution and a relative-path Windows launcher.
 
-The repository stays small: documentation, release metadata, verification tools, and the custom curse plugin source live in Git. The approximately **223 MB portable package is a Release asset**, rather than a large file in Git history. GitHub's automatically generated “Source code” archives are developer files; use the named portable ZIP to play.
+The repository stays small: documentation, release metadata, verification tools, and the custom curse plugin source live in Git. The approximately **226 MB portable package is a Release asset**, rather than a large file in Git history. GitHub's automatically generated “Source code” archives are developer files; use the named portable ZIP to play.
 
 ## Requirements
 
@@ -35,7 +35,7 @@ The plugin contains native hooks for the tested game build. A newer game or load
 
 ## Quick installation
 
-1. Download `Frankenstein-Randomizer-0.5.13-Portable.zip` from the [release page](https://github.com/RealFutureAI/frankenstein-randomizer/releases/tag/v0.5.13).
+1. Download `Frankenstein-Randomizer-0.5.22-Portable.zip` from the [release page](https://github.com/RealFutureAI/frankenstein-randomizer/releases/tag/v0.5.22).
 2. Close D2R and D2RLoader. If the same mod or loader is already installed, back up that installation's configuration and mod folder first. Keep old mod folders outside the active `Mods` folder while installing this complete build.
 3. Extract the **entire ZIP directly into your D2R game folder**, next to `D2R.exe` and `Data`. Do not extract it into a second nested game folder.
 4. Run **`FMMP_STARTEN.cmd`**, or launch `D2RLoader.exe` directly. The supplied clean loader configuration selects `FMMP-Experimental-R67` automatically.
@@ -70,15 +70,15 @@ The portable ZIP's short installation notes are in German; the instructions in t
 
 All damage figures below are **before equipment modifiers and enemy resistances**. `L` means effective skill level, starting at 1. Native fixed-point rounding and native immunity/slow limits still apply.
 
-| Skill | Main behavior in v0.5.13 |
+| Skill | Main behavior in v0.5.22 |
 | --- | --- |
 | **Plague** | A poison curse dealing `25 + 12.5 × (L − 1)` damage per second before synergies. Marked deaths trigger an explosion based on 20% of corpse base life. |
 | **Infection** | A small initial curse with `12.5 + 5 × (L − 1)` starting poison DPS. Damage compounds by 20% each full second. On death, a 33% corpse-base-life explosion spreads Infection over a larger area. |
 | **Confuse** | Confuses enemies and adds Iron Maiden-style reflection of physical **melee** damage. |
-| **Attract** | Draws enemies to the marked target. Adds physical vulnerability of 5 percentage points per skill level and a death explosion starting at 60% of corpse base life. |
+| **Attract** | Draws enemies to the marked target. Adds flat physical damage per hit and a death explosion starting at 60% of corpse base life. Both scale with its synergies. |
 | **Decrepify** | Starts at **0%** strength and gains **3 percentage points each second**, before growth synergies, up to a computed 90% maximum. |
 | **Lower Resist** | Reduces fire, cold, lightning, poison, physical, and magic resistance. Its previous base curve is halved; hard-point synergies add 0.75% each. |
-| **Life Tap** | Native-style Life Tap healing, starting at **25%**, with healing synergies. |
+| **Soul Harvest** | Cursed enemies drop collectible souls. Each restores Life and Mana and grants a stackable 15-second bonus to both maximums. |
 | **Elemental Marks** | Automatic compact fire pulses, a larger Frost Nova after every third registered hit, and Chain Lightning on qualifying hits. |
 | **Curse Mastery** | A one-point passive allowing different supported curses to coexist on the same enemy. Reapplying the same curse refreshes it rather than creating duplicate copies. |
 | **Plague Lord** | Normal Skeleton Warriors have `min(100, 1 + L)%` chance on a successful physical hit to cast one of the eight active curses. Successful procs have a one-second cooldown per warrior. |
@@ -105,9 +105,9 @@ Only invested skill points count. Item-granted skill levels do not add synergy p
 | --- | ---: | --- | --- |
 | Plague | 10% | Infection, Corpse Explosion, Poison Explosion | Poison damage |
 | Infection | 10% | Plague, Corpse Explosion, Poison Explosion | Poison damage |
-| Life Tap | 10% | Confuse, Attract | Healing |
+| Soul Harvest | 3% | Confuse, Attract | Life and Mana restored per soul |
 | Confuse | 15% | Elemental Marks, Attract | Melee reflection |
-| Attract | 8% | Confuse, Decrepify, Infection | Death-explosion damage |
+| Attract | 8% | Confuse, Decrepify, Infection | Flat physical hit damage and death-explosion damage |
 | Decrepify | 5% | Confuse, Attract, Lower Resist | Growth rate |
 | Lower Resist | 0.75% | Plague, Infection, Elemental Marks | Resistance reduction |
 | Elemental Marks | 15% | Confuse, Lower Resist | All three elemental damage types |
@@ -128,17 +128,17 @@ The package includes no saves. Use new characters for this mod environment and k
 
 - All **3,388 MPQ members** were checked when packaging the current balance update.
 - The package's **50 payload files** have recorded SHA-256 hashes, and the ZIP was checked for CRC errors and file-hash mismatches.
-- All **six custom regression suites** pass: death/infection chains, poison ramps, immediate curse pulses, curse behavior, multi-target behavior, and regeneration-timer handling.
+- All **seven custom regression suites** pass, covering death chains, poison ramps, curse pulses, hit and target behavior, regeneration timers, and Soul Harvest pickups and expiry.
 - Startup completed with **19 plugins loaded** and **188 tables compiled**.
 - Native probes cover 32-bit stat layers, aggregate resistance updates, skeleton-owner resolution, the compiled Decrepify growth formula, and pending-regeneration-timer detection.
 
-These checks do **not** replace combat testing. The latest balance changes and the fire/regen correction still need broader gameplay feedback. Three pre-existing baseline assertions remain during table startup; the customization introduces no additional startup assertions in the tested setup.
+Players confirmed Soul Harvest pickup and the calculated tooltip before the final healing reduction. The soul ground effect can remain invisible. The final balance and restored synergy lines still need an in-game check. Three pre-existing baseline assertions remain during table startup; the customization introduces no additional startup assertions in the tested setup.
 
 Overhead curse colors are customized. Blue Decrepify and cyan Lower Resist were confirmed visible in-game. The underlying overhead motion still uses the native Confuse question-mark animation: fully distinct custom symbol silhouettes are not yet working. The skill icons themselves are separate custom assets.
 
 ## Source and development
 
-`src/` contains the current **custom curse adapter** and its six regression tests. It does not contain the full Frankenstein base-mod source or regenerate the randomized MPQ. The vendored D2RLoader plugin SDK keeps its included MIT license.
+`src/` contains the current **custom curse adapter** and its seven regression tests. It does not contain the full Frankenstein base-mod source or regenerate the randomized MPQ. The vendored D2RLoader plugin SDK keeps its included MIT license.
 
 To build on Windows, open an **x64 Native Tools Command Prompt for Visual Studio** with the C++ compiler and Windows SDK available, then run:
 
@@ -146,7 +146,7 @@ To build on Windows, open an **x64 Native Tools Command Prompt for Visual Studio
 tools\build.cmd
 ```
 
-Outputs go to the ignored `build/` directory. The custom DLL must be used with the matching v0.5.13 mod data and tested game build. Native addresses are build-specific. See [development notes](docs/DEVELOPMENT.md).
+Outputs go to the ignored `build/` directory. The custom DLL must be used with the matching v0.5.22 mod data and tested game build. Native addresses are build-specific. See [development notes](docs/DEVELOPMENT.md).
 
 ## Credits and upstream projects
 

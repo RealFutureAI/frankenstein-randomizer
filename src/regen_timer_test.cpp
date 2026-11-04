@@ -33,6 +33,7 @@ static void SetTimer(unsigned char* t, int type, int frame, void* next) {
     std::memcpy(t + 0x38, &next, 8);
 }
 
+// The fake native timer owns successor scheduling, matching the real regeneration callback.
 int main() {
     Curses::UnitTimer = &Timer;
     int unit = 0;

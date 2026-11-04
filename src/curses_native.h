@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdint>
-
 namespace CurseNative {
 inline constexpr std::uint64_t UnitTimerRva = 0x48fe50;
 inline constexpr unsigned char UnitTimerBytes[] = {0x48, 0x83, 0xec, 0x28, 0x48, 0x85, 0xc9, 0x75,
@@ -73,6 +72,11 @@ inline constexpr std::uint64_t FrameRva = 0x48b5c0;
 inline constexpr unsigned char FrameBytes[] = {0x48, 0x89, 0x5c, 0x24, 0x10,
                                                0x57, 0x48, 0x83, 0xec, 0x20};
 inline constexpr std::uint64_t DamageRva = 0x44a9b0;
+// Called once after resistance resolution and before the engine subtracts HP.
+inline constexpr std::uint64_t HitLeechRva = 0x450c90;
+inline constexpr unsigned char HitLeechBytes[] = {0x40, 0x55, 0x56, 0x57, 0x41, 0x56,
+                                                  0x48, 0x83, 0xec, 0x58, 0x41, 0x83,
+                                                  0xb9, 0x20, 0x01, 0x00, 0x00, 0x00};
 inline constexpr unsigned char DamageBytes[] = {0x40, 0x53, 0x55, 0x57, 0x41, 0x56, 0x48,
                                                 0x81, 0xec, 0x88, 0x00, 0x00, 0x00};
 // Native resolved melee attack. AL is 1 only on a successful, in-range hit.

@@ -187,6 +187,7 @@ static void Frame(unsigned n) {
     *reinterpret_cast<unsigned*>(game + 0x170) = n;
 }
 
+// Keep four targets in the same fake game so their ramp and pulse timers can advance independently.
 int main() {
     game[0x106] = 3;
     player.type = 0;

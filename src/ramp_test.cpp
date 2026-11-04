@@ -64,6 +64,7 @@ static void Advance(unsigned frame) {
     Ramp::OnRegen(game, unit, 0, 0);
 }
 
+// Drive both poison marks using a fake frame clock and separate native stat lists.
 int main() {
     Ramp::OriginalList = &ListFor;
     Ramp::Get = &Get;

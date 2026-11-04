@@ -1,4 +1,4 @@
-# Curse mechanics and v0.5.13 balance
+# Curse mechanics and v0.5.22 balance
 
 `L` is the effective skill level. Damage figures are base values before synergies, equipment, and enemy resistance. Native fixed-point damage precision, integer resistance percentages, and native immunity/slow rules affect the final result.
 
@@ -11,11 +11,11 @@ The game retains stable internal IDs and prerequisite links, while names and ico
 | Amplify Damage | 66 | Plague |
 | Dim Vision | 71 | Curse Mastery |
 | Weaken | 72 | Plague Lord |
-| Iron Maiden | 76 | Life Tap |
+| Iron Maiden | 76 | Soul Harvest |
 | Terror | 77 | Infection |
 | Confuse | 81 | Confuse with melee reflection |
 | Life Tap | 82 | Elemental Marks |
-| Attract | 86 | Attract with vulnerability and death explosion |
+| Attract | 86 | Attract with bonus physical damage and a death explosion |
 | Decrepify | 87 | Time-growing Decrepify |
 | Lower Resist | 91 | Reduction of all six resistance types |
 
@@ -27,13 +27,15 @@ The game retains stable internal IDs and prerequisite links, while names and ico
 
 The two poison curses have independent rates and expiry tracking so they can coexist. Their poison damage is flat DPS, not target-maximum-life percentage damage. The on-death percentage describes the explosion's **damage**, not a 33% chance to spread.
 
-## Confuse, Attract, and Life Tap
+## Confuse, Attract, and Soul Harvest
 
 **Confuse** combines native confusion behavior with Iron Maiden-style reflection for physical melee attacks. It does not turn every ranged or spell hit into reflected damage. Elemental Marks and Attract each contribute 15% reflected-damage synergy per hard point.
 
-**Attract** draws nearby enemies to the marked target. It applies physical vulnerability of 5 percentage points per effective skill level, using physical resistance reduction and the native reduced effect against initially immune targets. Its death explosion starts at 60% of corpse base life. Confuse, Decrepify, and **Infection** each add 8% relative explosion damage per hard point. Lower Resist was replaced as an Attract synergy source in v0.5.13.
+**Attract** draws nearby enemies to the marked target and adds **50 + 15 × (L − 1)** physical damage per qualifying hit before synergies. Its death explosion starts at 60% of corpse base life. Confuse, Decrepify, and Infection each add 8% per hard point to both damage effects. The base explosion radius is 20 internal units and grows by one per additional level.
 
-**Life Tap** uses native-style healing with a 25% base. Confuse and Attract each add a 10% relative healing bonus per hard point. Its internal skill ID is 76; the old internal Life Tap slot is used by Elemental Marks.
+**Soul Harvest** marks enemies to drop a soul on death. Walk over a soul to restore **(1 + 0.3 × L)%** of maximum Life and Mana before synergies. Each invested point in Confuse or Attract adds a relative **3%** to this healing. For example, with a base heal of 7% and ten total hard points in those skills, each soul restores 9.1% of both resources.
+
+Each soul also grants **(0.5 + 0.08 × L)%** maximum Life and Mana for **15 seconds**. Bonuses add together and expire independently. Only players can collect souls. The tooltip shows the calculated healing and maximum-resource bonus, with the two synergy sources below. The ground effect may be invisible even when pickup works.
 
 ## Decrepify
 
@@ -45,7 +47,7 @@ For `S` total hard points across those sources and elapsed whole seconds `t`, th
 min(90, floor(3 × min(t, 30) × (100 + 5 × S) / 100))
 ```
 
-Without synergies, it reaches the 90% computed cap after 30 seconds if the curse lasts that long. The progression applies independently to all affected targets. Native immunity and movement/attack-speed limits still apply, so the computed strength is not a promise that every displayed resistance or animation rate changes by the same amount.
+Without synergies, it reaches the 90% computed cap after 30 seconds if the curse lasts that long. The progression applies independently to all affected targets, including eligible targets on Hell. The cast radius grows with skill level. Native physical resistance and movement/attack-speed limits can affect the result.
 
 ## Lower Resist
 
